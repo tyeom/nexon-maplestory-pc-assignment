@@ -1,0 +1,55 @@
+services:
+  rabbitmq:
+    image: rabbitmq:4
+
+  mongodb:
+    image: mongo:8
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: sa
+      MONGO_INITDB_ROOT_PASSWORD: 1234
+    ports:
+      - '27017:27017'
+    volumes:
+      - ./mongo/event_reward:/data/lib
+    command: mongod --quiet --logpath /dev/null
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+  
+  gateway:
+    depends_on:
+      - rabbitmq
+    build:
+      context: .
+      dockerfile: ./apps/gateway/Dockerfile
+    command: pnpm run start:dev gateway
+    ports:
+      - 3000:3000
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+
+  auth:
+    depends_on:
+      - rabbitmq
+    build:
+      context: .
+      dockerfile: ./apps/auth/Dockerfile
+    command: pnpm run start:dev auth
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+
+  event:
+    depends_on:
+      - rabbitmq
+    build:
+      context: .
+      dockerfile: ./apps/event/Dockerfile
+    command: pnpm run start:dev event
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
