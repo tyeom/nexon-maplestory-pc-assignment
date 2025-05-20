@@ -24,7 +24,7 @@ export class RewardClaimController {
   constructor(private readonly rewardClaimService: RewardClaimService) {}
 
   /**
-   * 이벤트 보상 청구구
+   * 이벤트 보상 청구
    * @param eventId 이벤트트 Id
    * @param user 요청한 유저 정보
    * @returns 결과

@@ -20,14 +20,28 @@ export class EventService {
     private readonly eventMicroservice: ClientProxy,
   ) {}
 
+  /**
+   * 연속 출석체크 이벤트 조건값 유효성 검증
+   * @param createEventDto 이벤트 정보
+   */
+  private validationByAttendanceEvent(
+    createEventDto: CreateEventDto | UpdateEventDto,
+  ): boolean {
+    const { condition } = createEventDto;
+    if (!condition) return false;
+
+    const numCondition = parseInt(condition);
+    return isNaN(numCondition) === false && numCondition <= 0;
+  }
+
   async create(createEventDto: CreateEventDto, user: UserDto) {
     // eslint-disable-next-line no-useless-catch
     try {
       // 연속 출석 체크 이벤트인 경우 조건값 유효성 체크
       // TODO : 각 이벤트 마다 조건값 유효성 체크는 추상화해서 각 이벤트 담당 모듈에서 처리 되도록 하면 좋을 것!
       if (createEventDto.eventType === EventType.ATTENDANCE) {
-        const condition = parseInt(createEventDto.condition);
-        if (isNaN(condition) || condition <= 0) {
+        const validation = this.validationByAttendanceEvent(createEventDto);
+        if (!validation) {
           throw new BadRequestException(
             `연속 출석 체크 이벤트 조건은 숫자 형태 0보다 커야 합니다.`,
           );
@@ -54,6 +68,17 @@ export class EventService {
   async update(id: string, updateEventDto: UpdateEventDto, user: UserDto) {
     // eslint-disable-next-line no-useless-catch
     try {
+      // 연속 출석 체크 이벤트인 경우 조건값 유효성 체크
+      // TODO : 각 이벤트 마다 조건값 유효성 체크는 추상화해서 각 이벤트 담당 모듈에서 처리 되도록 하면 좋을 것!
+      if (updateEventDto.eventType === EventType.ATTENDANCE) {
+        const validation = this.validationByAttendanceEvent(updateEventDto);
+        if (!validation) {
+          throw new BadRequestException(
+            `연속 출석 체크 이벤트 조건은 숫자 형태 0보다 커야 합니다.`,
+          );
+        }
+      }
+
       const payload = { ...updateEventDto, id: id, updatedBy: user.email };
 
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment

@@ -103,6 +103,10 @@ export class RewardClaimService {
       throw new RpcException('잘못된 보상 요청 입니다.');
     }
 
+    if (!event.rewards || (event.rewards && event.rewards.length <= 0)) {
+      throw new RpcException('보상 정보가 없는 이벤트 입니다.');
+    }
+
     const rewardClaims = await this.findOneByUserIdAndEventId(userId, eventId);
     // 해당 이벤트에 보상 이력이 있는지 체크
     const isSuccess =

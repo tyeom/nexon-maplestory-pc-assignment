@@ -7,6 +7,11 @@ import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { RpcException } from '@nestjs/microservices';
 import { GetEventsDto } from './dto/get-events-dto';
+import { Reward } from '../reward/schema/reward .schema';
+
+interface EventWithRewards extends Event {
+  rewards: Reward[];
+}
 
 @Injectable()
 export class EventProcessService {
@@ -28,9 +33,9 @@ export class EventProcessService {
     return await created.save();
   }
 
-  async findOneById(id: string) {
+  async findOneById(id: string): Promise<EventWithRewards> {
     const event = await this.eventModel
-      .findById({ id })
+      .findById(id)
       .where('isActive')
       .equals(true)
       .populate('rewards')
@@ -39,7 +44,7 @@ export class EventProcessService {
       throw new RpcException('존재하지 않는 이벤트 입니다.');
     }
 
-    return event;
+    return event as unknown as EventWithRewards;
   }
 
   async findOneByName(name: string) {
@@ -61,7 +66,10 @@ export class EventProcessService {
   }
 
   async update(updateEventProcessDto: UpdateEventProcessDto) {
-    const foundEvent = await this.findOneById(updateEventProcessDto.id);
+    const foundEvent = await this.eventModel
+      .findById(updateEventProcessDto.id)
+      .populate('rewards')
+      .exec();
     if (!foundEvent) {
       throw new RpcException('존재하지 않는 이벤트 입니다.');
     }
